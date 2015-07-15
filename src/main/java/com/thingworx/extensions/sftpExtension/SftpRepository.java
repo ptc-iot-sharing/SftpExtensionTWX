@@ -9,7 +9,7 @@ import java.util.List;
  * services in the SftpRepositoryThing.
  * Implementations can use any backend available
  */
-public interface SftpRepository {
+public interface SftpRepository extends AutoCloseable {
     /**
      * Creates a new folder on the remote filesystem on the specified path
      *
