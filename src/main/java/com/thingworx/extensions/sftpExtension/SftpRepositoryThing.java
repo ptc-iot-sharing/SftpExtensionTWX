@@ -221,4 +221,39 @@ public class SftpRepositoryThing extends Thing {
 
         this.dispatchBackgroundEvent(event);
     }
+
+    @ThingworxServiceDefinition(
+            name = "DownloadFile",
+            description = "Download a FTP server file to a repository"
+    )
+    public void downloadFile(@ThingworxServiceParameter(
+            name = "FilePath",
+            description = "Path to the file",
+            baseType = "STRING"
+    ) String filePath, @ThingworxServiceParameter(
+            name = "FileRepository",
+            description = "File repository",
+            baseType = "THINGNAME") String fileRepository
+    ) throws Exception {
+
+    }
+
+    @ThingworxServiceDefinition(
+            name = "UploadFile",
+            description = "Upload a file from a repository to the SFTP Server"
+    )
+    public void uploadFile(@ThingworxServiceParameter(
+            name = "RepoFilePath",
+            description = "Path of Repository File",
+            baseType = "STRING"
+    ) String repositoryPath, @ThingworxServiceParameter(
+            name = "RemoteFilePath",
+            description = "SFTOP file path",
+            baseType = "STRING"
+    ) String FTPPath, @ThingworxServiceParameter(
+            name = "FileRepository",
+            description = "File repository",
+            baseType = "THINGNAME") String fileRepository
+    ) throws Exception {
+    }
 }
