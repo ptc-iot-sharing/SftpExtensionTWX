@@ -1,0 +1,106 @@
+group 'com.thingworx.extensions'
+version '1.0-SNAPSHOT'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'java'
+
+defaultTasks 'clean', 'build-extension'
+
+project.sourceCompatibility = 1.8
+project.targetCompatibility = 1.8
+
+// set the properties accordingly
+project.ext {
+    extensionJar = "thingworx-sftp-extension.jar"
+    baseDir = '.'
+    common = 'common'
+    uiDir = "${baseDir}/ui"
+    libDir = "${baseDir}/lib"
+    srcDir = "${baseDir}/src/main"
+    buildDir = "${baseDir}/build"
+    configDir = "${baseDir}/configfiles"
+    zipDir = "${baseDir}/zip"
+    thingworxSdkDir = "${baseDir}/lib/common"
+    packageVendor = "ThingWorx Customer Service"
+    packageName = "MailExampleExtension"
+    packageTitle = "MailExampleExtension"
+    packageVersion = version
+}
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs project.ext.thingworxSdkDir
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir project.ext.srcDir
+        }
+    }
+}
+
+clean.doFirst {
+    delete project.ext.zipDir
+}
+
+configurations {
+    packageDependencies
+    compile {
+        extendsFrom packageDependencies
+    }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    packageDependencies 'com.jcraft:jsch:0.1.53'
+    compile fileTree(dir: 'lib/common/', include: ['*.jar'])
+}
+
+jar {
+    archiveName = project.ext.extensionJar
+    manifest {
+        attributes(["Built-By"  : project.ext.packageVendor,
+                    "Build-Date": new Date().format("yyyy-MM-dd HH:mm:ss")])
+        attributes(["Package-Title"  : project.ext.packageTitle,
+                    "Package-Version": project.ext.packageVersion,
+                    "Package-Vendor" : project.ext.packageVendor], project.ext.packageName
+        )
+    }
+}
+
+task prepPackage(dependsOn: jar) {
+    doLast {
+        delete project.ext.zipDir
+        delete "${buildDir}/zip/"
+
+        // add here all the jars from the packageDependencies configuration
+        copy {
+            from configurations.packageDependencies
+            into "${buildDir}/zip/lib/common/"
+        }
+        // add the configuration
+        copy {
+            from "${project.ext.configDir}"
+            into "${buildDir}/zip/"
+        }
+        // add the extension jar itself
+        copy {
+            from "${buildDir}/libs/${project.ext.extensionJar}"
+            into "${buildDir}/zip/lib/common/"
+        }
+        // add the ui files
+        copy {
+            from uiDir
+            into "${buildDir}/zip/ui/common/"
+        }
+    }
+}
+
+task packageExtension(type: Zip, dependsOn: prepPackage, overwrite: true) {
+    archiveName = "${project.name}.zip"
+    destinationDir = new File(project.ext.zipDir)
+    from "${buildDir}/zip/"
+}

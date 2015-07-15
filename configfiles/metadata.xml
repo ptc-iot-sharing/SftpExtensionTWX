@@ -1,0 +1,26 @@
+<Entities>
+    <ExtensionPackages>
+        <ExtensionPackage name="SftpExtension"
+                          description="SFTP or SCP extension"
+                          vendor="ThingWorx Customer Service"
+                          packageVersion="1.0"
+                          minimumThingWorxVersion="5.0.0">
+            <JarResources>
+                <FileResource type="JAR" file="thingworx-sftp-extension.jar"
+                              description="HelloWorld ThingPackage JAR"/>
+            </JarResources>
+        </ExtensionPackage>
+    </ExtensionPackages>
+    <ThingPackages>
+        <ThingPackage name="SftpRepositoryThing" description="Sftp imap Extension"
+                      className="com.thingworx.extensions.sftpExtension.SftpRepositoryThing" aspect.isSystemObject="false"
+                      aspect.isCreatable="true"/>
+    </ThingPackages>
+    <ThingTemplates>
+        <ThingTemplate name="SftpRepositoryTemplate" description="Sftp server example Template"
+                       thingPackage="SftpRepositoryThing"
+                       aspect.isSystemObject="false">
+            <avatar/>
+        </ThingTemplate>
+    </ThingTemplates>
+</Entities>
