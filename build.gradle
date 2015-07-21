@@ -16,6 +16,7 @@ project.ext {
     common = 'common'
     uiDir = "${baseDir}/ui"
     libDir = "${baseDir}/lib"
+    localJarDir = "${basedir}/lib/local"
     srcDir = "${baseDir}/src/main"
     buildDir = "${baseDir}/build"
     configDir = "${baseDir}/configfiles"
@@ -31,6 +32,9 @@ repositories {
     mavenCentral()
     flatDir {
         dirs project.ext.thingworxSdkDir
+    }
+    flatDir {
+        dirs project.ext.localJarDir
     }
 }
 
@@ -100,7 +104,9 @@ task prepPackage(dependsOn: jar) {
 }
 
 task packageExtension(type: Zip, dependsOn: prepPackage, overwrite: true) {
-    archiveName = "${project.name}.zip"
-    destinationDir = new File(project.ext.zipDir)
-    from "${buildDir}/zip/"
+    doLast {
+        archiveName = "${project.name}.zip"
+        destinationDir = new File(project.ext.zipDir)
+        from "${buildDir}/zip/"
+    }
 }
