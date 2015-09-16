@@ -101,8 +101,10 @@ public class SftpFileRepositoryImpl implements SftpRepository {
                     throw new SftpException("File " + targetPath + " already exists!");
                 }
             } catch (com.jcraft.jsch.SftpException e) {
-                LOGGER.error(String.format("Failed to see if file %s exists", targetPath), e);
-                throw new SftpException(String.format("Failed to see if file %s exists", targetPath), e);
+                if(e.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+                    LOGGER.error(String.format("Failed to see if file %s exists", targetPath), e);
+                    throw new SftpException(String.format("Failed to see if file %s exists", targetPath), e);
+                }
             }
         }
         try {
