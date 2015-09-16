@@ -10,7 +10,8 @@ public class SftpConfiguration {
     private int port = 22;
     private String passphrase;
     private String privateKey;
-    private long timeout = 20000;
+    private int connectionTimeout = 20 * 1000;
+    private int keepAliveTimeout = 60 * 1000;
 
     public String getUsername() {
         return username;
@@ -60,11 +61,32 @@ public class SftpConfiguration {
         this.privateKey = privateKey;
     }
 
-    public long getTimeout() {
-        return timeout;
+    public int getConnectionTimeout() {
+        return connectionTimeout;
     }
 
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
+    public void setConnectionTimeout(int connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    @Override
+    public String toString() {
+        return "SftpConfiguration{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", passphrase='" + passphrase + '\'' +
+                ", privateKey='" + privateKey + '\'' +
+                ", connectionTimeout=" + connectionTimeout +
+                '}';
+    }
+
+    public int getKeepAliveTimeout() {
+        return keepAliveTimeout;
+    }
+
+    public void setKeepAliveTimeout(int keepAliveTimeout) {
+        this.keepAliveTimeout = keepAliveTimeout;
     }
 }

@@ -15,7 +15,7 @@ public interface SftpRepository extends AutoCloseable {
      *
      * @param path path where to create the new folder
      */
-    void createFolder(String path) throws SftpException;
+    boolean createFolder(String path) throws SftpException;
 
     /**
      * Renames a file with a given filePath to a new name
@@ -84,4 +84,14 @@ public interface SftpRepository extends AutoCloseable {
      * @param filePath    path where to upload the file
      */
     void uploadFile(ByteArrayInputStream inputStream, String filePath) throws SftpException;
+
+    /**
+     * Moves to another directory
+     *
+     * @param directory directory to move to
+     * @throws SftpException
+     */
+    void changeDirectory(String directory) throws SftpException;
+
+    boolean isDisconnected();
 }

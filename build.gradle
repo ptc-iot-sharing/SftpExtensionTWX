@@ -60,7 +60,8 @@ configurations {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     packageDependencies 'com.jcraft:jsch:0.1.53'
-    compile fileTree(dir: 'lib/common/', include: ['*.jar'])
+    compile fileTree(dir: project.ext.thingworxSdkDir, include: ['*.jar'])
+    packageDependencies fileTree(dir: project.ext.localJarDir, include: ['*.jar'])
 }
 
 jar {
@@ -104,9 +105,7 @@ task prepPackage(dependsOn: jar) {
 }
 
 task packageExtension(type: Zip, dependsOn: prepPackage, overwrite: true) {
-    doLast {
-        archiveName = "${project.name}.zip"
-        destinationDir = new File(project.ext.zipDir)
-        from "${buildDir}/zip/"
-    }
+    archiveName = "${project.name}.zip"
+    destinationDir = new File(project.ext.zipDir)
+    from "${buildDir}/zip/"
 }

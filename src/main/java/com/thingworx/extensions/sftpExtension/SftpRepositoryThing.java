@@ -1,15 +1,26 @@
 package com.thingworx.extensions.sftpExtension;
 
 
-import com.thingworx.common.utils.PathUtilities;
+import ch.qos.logback.classic.Logger;
 import com.thingworx.data.util.InfoTableInstanceFactory;
+import com.thingworx.entities.utils.ThingUtilities;
+import com.thingworx.extensions.sftpExtension.jsch.SftpFileRepositoryImpl;
+import com.thingworx.logging.LogUtilities;
 import com.thingworx.metadata.annotations.*;
 import com.thingworx.things.Thing;
 import com.thingworx.things.events.ThingworxEvent;
+import com.thingworx.things.repository.FileRepositoryThing;
 import com.thingworx.types.InfoTable;
 import com.thingworx.types.collections.ValueCollection;
+import com.thingworx.types.primitives.DatetimePrimitive;
+import com.thingworx.types.primitives.NumberPrimitive;
 import com.thingworx.types.primitives.StringPrimitive;
 import com.thingworx.webservices.context.ThreadLocalContext;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 @ThingworxImplementedShapeDefinitions(
@@ -24,7 +35,86 @@ import com.thingworx.webservices.context.ThreadLocalContext;
                 dataShape = "FileTransferJob"
         )}
 )
+@ThingworxConfigurationTableDefinitions(
+        tables = {@ThingworxConfigurationTableDefinition(
+                name = "ConnectionInfo",
+                description = "SFTP Server Connection Parameters",
+                isMultiRow = false,
+                ordinal = 0,
+                dataShape = @ThingworxDataShapeDefinition(
+                        fields = {@ThingworxFieldDefinition(
+                                ordinal = 0,
+                                name = "host",
+                                description = "Server name",
+                                baseType = "STRING",
+                                aspects = {"defaultValue:localhost", "friendlyName:SFTP Server"}
+                        ), @ThingworxFieldDefinition(
+                                ordinal = 1,
+                                name = "port",
+                                description = "Server port",
+                                baseType = "INTEGER",
+                                aspects = {"defaultValue:22", "friendlyName:SFTP Server Port"}
+                        ),@ThingworxFieldDefinition(
+                                ordinal = 2,
+                                name = "username",
+                                description = "Username",
+                                baseType = "STRING",
+                                aspects = {"defaultValue:root", "friendlyName:SFTP User"}
+                        ), @ThingworxFieldDefinition(
+                                ordinal = 3,
+                                name = "password",
+                                description = "Password",
+                                baseType = "PASSWORD",
+                                aspects = {"friendlyName:SFTP Account Password"}
+                        ), @ThingworxFieldDefinition(
+                                ordinal = 4,
+                                name = "privateKey",
+                                description = "Key based auth using a private key",
+                                baseType = "PASSWORD",
+                                aspects = {"friendlyName:Private key"}
+                        ),   @ThingworxFieldDefinition(
+                                ordinal = 3,
+                                name = "passphrase",
+                                description = "Passphrase",
+                                baseType = "PASSWORD",
+                                aspects = {"friendlyName:SFTP key passphrase"}
+                        ), @ThingworxFieldDefinition(
+                                ordinal = 5,
+                                name = "connectionTimeout",
+                                description = "Timeout (milliseconds) to establish a connection",
+                                baseType = "INTEGER",
+                                aspects = {"defaultValue:20000", "friendlyName:Connection Timeout"}
+                        ), @ThingworxFieldDefinition(
+                                ordinal = 6,
+                                name = "keepAliveTimeout",
+                                description = "Timeout (milliseconds) before closing a connection",
+                                baseType = "INTEGER",
+                                aspects = {"defaultValue:60000", "friendlyName:KeepAlive Timeout"}
+                        )}
+                )
+        )}
+)
 public class SftpRepositoryThing extends Thing {
+    private static Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
+
+    private ManagedSftpFileRepository repository;
+    private SftpConfiguration config = new SftpConfiguration();
+
+    @Override
+    protected void initializeThing() throws Exception {
+        // get values from the configuration table
+        config.setHost((String) this.getConfigurationData().getValue("ConnectionInfo", "host"));
+        config.setPort((Integer) this.getConfigurationData().getValue("ConnectionInfo", "port"));
+        config.setPassphrase((String) this.getConfigurationData().getValue("ConnectionInfo", "passphrase"));
+        config.setPassword((String) this.getConfigurationData().getValue("ConnectionInfo", "password"));
+        config.setPrivateKey((String) this.getConfigurationData().getValue("ConnectionInfo", "privateKey"));
+        config.setUsername((String) this.getConfigurationData().getValue("ConnectionInfo", "username"));
+        config.setConnectionTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "connectionTimeout"));
+        config.setKeepAliveTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "keepAliveTimeout"));
+        repository = new ManagedSftpFileRepository(config);
+        LOGGER.info("Created a sftp thing with config:" + config);
+    }
+
     @ThingworxServiceDefinition(
             name = "BrowseDirectory",
             description = "Get a list of files and/or directories on the SftpFilesystem",
@@ -41,7 +131,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Directory path",
             baseType = "STRING"
     ) String path) throws Exception {
-        return null;
+        return convertToInfotable(repository.getRepository().listFiles(path, ""));
     }
 
     @ThingworxServiceDefinition(
@@ -54,20 +144,7 @@ public class SftpRepositoryThing extends Thing {
             description = "File path",
             baseType = "STRING"
     ) String path) throws Exception {
-       /* PathUtilities.validatePath(path);
-        File file = new File(PathUtilities.concatPaths(this.getRootPath(), path));
-        this.checkFileExists(file);
-        if (file.isFile()) {
-            boolean deleted = file.delete();
-            if (!deleted) {
-                _logger.warn("Could not delete Repository file [{}]", file.getAbsoluteFile());
-            }
-
-            return Boolean.valueOf(true);
-        } else {
-            throw new Exception("A valid file was not specified");
-        }*/
-        return false;
+        return repository.getRepository().deleteFile(path);
     }
 
     @ThingworxServiceDefinition(
@@ -80,15 +157,7 @@ public class SftpRepositoryThing extends Thing {
             description = "File path",
             baseType = "STRING"
     ) String path) throws Exception {
-       /* PathUtilities.validatePath(path);
-        File file = new File(PathUtilities.concatPaths(this.getRootPath(), path));
-        this.checkFileExists(file);
-        InfoTable it = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemFile");
-        ValueCollection values = this.getFileInfoForFile(path, file, false);
-        it.addRow(values);
-        return it;
-        */
-        return null;
+        return convertToInfotable(repository.getRepository().getFileInfo(path));
     }
 
     @ThingworxServiceDefinition(
@@ -111,13 +180,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Name mask",
             baseType = "STRING"
     ) String nameMask) throws Exception {
-       /* PathUtilities.validatePath(path);
-        InfoTable it = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemDirectory");
-        File startingDirectory = new File(PathUtilities.concatPaths(this.getRootPath(), path));
-        validateDirectory(startingDirectory);
-        this.getDirectoryListing(startingDirectory, path, it, 1);
-        return it;*/
-        return null;
+        return convertToInfotable(repository.getRepository().listDirectories(path, nameMask));
     }
 
     @ThingworxServiceDefinition(
@@ -140,8 +203,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Name mask",
             baseType = "STRING"
     ) String nameMask) throws Exception {
-        // return this.GetFileListing(path, nameMask);
-        return null;
+        return convertToInfotable(repository.getRepository().listFiles(path, nameMask));
     }
 
     @ThingworxServiceDefinition(
@@ -163,7 +225,7 @@ public class SftpRepositoryThing extends Thing {
             baseType = "BOOLEAN",
             aspects = {"defaultValue:false"}
     ) Boolean overwrite) throws Exception {
-        // this.moveFile(sourcePath, targetPath);
+        repository.getRepository().moveFile(sourcePath, targetPath, overwrite);
     }
 
     @ThingworxServiceDefinition(
@@ -185,8 +247,7 @@ public class SftpRepositoryThing extends Thing {
             baseType = "BOOLEAN",
             aspects = {"defaultValue:false"}
     ) Boolean overwrite) throws Exception {
-        PathUtilities.validatePath(path);
-        PathUtilities.validatePath(name);
+        repository.getRepository().renameFile(path, name, overwrite);
     }
 
     @ThingworxServiceDefinition(
@@ -199,7 +260,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Folder path",
             baseType = "STRING"
     ) String path) throws Exception {
-        return false;
+        return repository.getRepository().createFolder(path);
     }
 
     private void fireTransferEvent(String userName) throws Exception {
@@ -226,7 +287,7 @@ public class SftpRepositoryThing extends Thing {
             name = "DownloadFile",
             description = "Download a FTP server file to a repository"
     )
-    public void downloadFile(@ThingworxServiceParameter(
+    public void DownloadFile(@ThingworxServiceParameter(
             name = "FilePath",
             description = "Path to the file",
             baseType = "STRING"
@@ -235,25 +296,55 @@ public class SftpRepositoryThing extends Thing {
             description = "File repository",
             baseType = "THINGNAME") String fileRepository
     ) throws Exception {
-
+        Thing thing = ThingUtilities.findThing(fileRepository);
+        FileRepositoryThing fileRepoThing = (FileRepositoryThing) thing;
+        ByteArrayOutputStream bos = repository.getRepository().downloadFile(filePath);
+        fileRepoThing.CreateBinaryFile(new File(filePath).getAbsoluteFile().getName(), bos.toByteArray(), true);
     }
 
     @ThingworxServiceDefinition(
             name = "UploadFile",
             description = "Upload a file from a repository to the SFTP Server"
     )
-    public void uploadFile(@ThingworxServiceParameter(
+    public void UploadFile(@ThingworxServiceParameter(
             name = "RepoFilePath",
             description = "Path of Repository File",
             baseType = "STRING"
     ) String repositoryPath, @ThingworxServiceParameter(
             name = "RemoteFilePath",
-            description = "SFTOP file path",
+            description = "SFTP file path",
             baseType = "STRING"
-    ) String FTPPath, @ThingworxServiceParameter(
+    ) String remotePath, @ThingworxServiceParameter(
             name = "FileRepository",
             description = "File repository",
             baseType = "THINGNAME") String fileRepository
     ) throws Exception {
+        Thing thing = ThingUtilities.findThing(fileRepository);
+        FileRepositoryThing fileRepoThing = (FileRepositoryThing) thing;
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(fileRepoThing.LoadBinary(repositoryPath));
+        repository.getRepository().uploadFile(bis, remotePath);
+    }
+
+
+    public static InfoTable convertToInfotable(Collection<FileSystemFile> files) throws Exception {
+        InfoTable messagesInfoTable = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemFile");
+
+        for (FileSystemFile file : files) {
+            ValueCollection vc = new ValueCollection();
+            vc.put("lastModifiedDate", new DatetimePrimitive(file.getDateTime().getMillis()));
+            vc.put("size", new NumberPrimitive(file.getSize()));
+            vc.put("path", new StringPrimitive(file.getPath()));
+            vc.put("name", new StringPrimitive(file.getName()));
+            vc.put("fileType", new StringPrimitive(file.getFileType()));
+            messagesInfoTable.addRow(vc);
+        }
+        return messagesInfoTable;
+    }
+
+    private InfoTable convertToInfotable(FileSystemFile file) throws Exception {
+        List<FileSystemFile> files = new ArrayList<>();
+        files.add(file);
+        return convertToInfotable(files);
     }
 }

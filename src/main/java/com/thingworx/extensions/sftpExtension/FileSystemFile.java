@@ -7,10 +7,10 @@ import org.joda.time.DateTime;
  */
 public class FileSystemFile {
     private String path;
-    private Number size;
+    private double size;
     private DateTime dateTime;
     private String name;
-    private String fileType;
+    private boolean isDirectory;
 
     public String getPath() {
         return path;
@@ -20,11 +20,11 @@ public class FileSystemFile {
         this.path = path;
     }
 
-    public Number getSize() {
+    public double getSize() {
         return size;
     }
 
-    public void setSize(Number size) {
+    public void setSize(double size) {
         this.size = size;
     }
 
@@ -44,11 +44,16 @@ public class FileSystemFile {
         this.name = name;
     }
 
-    public String getFileType() {
-        return fileType;
+    public boolean isDirectory() {
+        return isDirectory;
     }
 
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
+    public void setIsDirectory(boolean isDirectory) {
+        this.isDirectory = isDirectory;
     }
+
+    public String getFileType() {
+        return isDirectory() ? "D" : "F";
+    }
+
 }
