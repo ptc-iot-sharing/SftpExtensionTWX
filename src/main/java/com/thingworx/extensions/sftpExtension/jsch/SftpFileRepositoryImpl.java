@@ -9,7 +9,9 @@ import com.thingworx.extensions.sftpExtension.SftpException;
 import com.thingworx.logging.LogUtilities;
 import org.joda.time.DateTime;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -101,7 +103,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
                     throw new SftpException("File " + targetPath + " already exists!");
                 }
             } catch (com.jcraft.jsch.SftpException e) {
-                if(e.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
+                if (e.id != ChannelSftp.SSH_FX_NO_SUCH_FILE) {
                     LOGGER.error(String.format("Failed to see if file %s exists", targetPath), e);
                     throw new SftpException(String.format("Failed to see if file %s exists", targetPath), e);
                 }
