@@ -39,19 +39,17 @@ public interface SftpRepository extends AutoCloseable {
      * Lists only the files in a given directory
      *
      * @param directoryPath directory path to list
-     * @param nameMask      Represents a name mask that the files must match. This uses bash style wildcards
      * @return A list of all the files in the directory
      */
-    List<FileSystemFile> listFiles(String directoryPath, String nameMask) throws SftpException;
+    List<FileSystemFile> listFiles(String directoryPath) throws SftpException;
 
     /**
      * Lists only the directories in a given directory
      *
      * @param directoryPath directory path to list
-     * @param nameMask      Represents a name mask that the directories must match. This uses bash style wildcards
      * @return A list of all the directories in the directory
      */
-    List<FileSystemFile> listDirectories(String directoryPath, String nameMask) throws SftpException;
+    List<FileSystemFile> listDirectories(String directoryPath) throws SftpException;
 
     /**
      * Gets the file information for a given folder

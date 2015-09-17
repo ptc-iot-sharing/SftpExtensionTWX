@@ -10,6 +10,8 @@ import java.util.TimerTask;
 
 /**
  * A sftp repository that connects on demand, and disconnects on timeout
+ * This regular checks when was the last message and, if a certain time has passed,
+ * closes the connection.
  */
 public class ManagedSftpFileRepository extends TimerTask {
     private static Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
@@ -21,8 +23,8 @@ public class ManagedSftpFileRepository extends TimerTask {
     public ManagedSftpFileRepository(SftpConfiguration config) throws SftpException {
         this.config = config;
         repository = new SftpFileRepositoryImpl(config);
-        new Timer("SftpKeepAliveThread", true).scheduleAtFixedRate(this, config.getKeepAliveTimeout(),
-                config.getKeepAliveTimeout());
+        new Timer("SftpKeepAliveThread", true).scheduleAtFixedRate(this, config.getKeepAliveTimeout() / 2,
+                config.getKeepAliveTimeout() / 2);
         lastCommand = new DateTime();
     }
 
@@ -32,7 +34,7 @@ public class ManagedSftpFileRepository extends TimerTask {
     @Override
     public void run() {
         long lastCommandDelta = new DateTime().getMillis() - lastCommand.getMillis();
-        if (lastCommandDelta > config.getKeepAliveTimeout()) {
+        if (lastCommandDelta > config.getKeepAliveTimeout() && !repository.isDisconnected()) {
             try {
                 repository.close();
                 LOGGER.info(String.format("Closed sftpRepository %s@%s no messages in last %d ms",

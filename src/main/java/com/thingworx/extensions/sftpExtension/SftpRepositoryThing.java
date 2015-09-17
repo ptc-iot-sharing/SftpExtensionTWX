@@ -4,7 +4,6 @@ package com.thingworx.extensions.sftpExtension;
 import ch.qos.logback.classic.Logger;
 import com.thingworx.data.util.InfoTableInstanceFactory;
 import com.thingworx.entities.utils.ThingUtilities;
-import com.thingworx.extensions.sftpExtension.jsch.SftpFileRepositoryImpl;
 import com.thingworx.logging.LogUtilities;
 import com.thingworx.metadata.annotations.*;
 import com.thingworx.things.Thing;
@@ -17,7 +16,9 @@ import com.thingworx.types.primitives.NumberPrimitive;
 import com.thingworx.types.primitives.StringPrimitive;
 import com.thingworx.webservices.context.ThreadLocalContext;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -100,6 +101,21 @@ public class SftpRepositoryThing extends Thing {
     private ManagedSftpFileRepository repository;
     private SftpConfiguration config = new SftpConfiguration();
 
+    public static InfoTable convertToInfotable(Collection<FileSystemFile> files) throws Exception {
+        InfoTable messagesInfoTable = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemFile");
+
+        for (FileSystemFile file : files) {
+            ValueCollection vc = new ValueCollection();
+            vc.put("lastModifiedDate", new DatetimePrimitive(file.getDateTime().getMillis()));
+            vc.put("size", new NumberPrimitive(file.getSize()));
+            vc.put("path", new StringPrimitive(file.getPath()));
+            vc.put("name", new StringPrimitive(file.getName()));
+            vc.put("fileType", new StringPrimitive(file.getFileType()));
+            messagesInfoTable.addRow(vc);
+        }
+        return messagesInfoTable;
+    }
+
     @Override
     protected void initializeThing() throws Exception {
         // get values from the configuration table
@@ -131,7 +147,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Directory path",
             baseType = "STRING"
     ) String path) throws Exception {
-        return convertToInfotable(repository.getRepository().listFiles(path, ""));
+        return convertToInfotable(repository.getRepository().listFiles(path));
     }
 
     @ThingworxServiceDefinition(
@@ -175,12 +191,8 @@ public class SftpRepositoryThing extends Thing {
             name = "path",
             description = "Directory path",
             baseType = "STRING"
-    ) String path, @ThingworxServiceParameter(
-            name = "nameMask",
-            description = "Name mask",
-            baseType = "STRING"
-    ) String nameMask) throws Exception {
-        return convertToInfotable(repository.getRepository().listDirectories(path, nameMask));
+    ) String path) throws Exception {
+        return convertToInfotable(repository.getRepository().listDirectories(path));
     }
 
     @ThingworxServiceDefinition(
@@ -196,14 +208,10 @@ public class SftpRepositoryThing extends Thing {
     )
     public InfoTable ListFiles(@ThingworxServiceParameter(
             name = "path",
-            description = "Directory path",
+            description = "Directory path. Can include wildcards",
             baseType = "STRING"
-    ) String path, @ThingworxServiceParameter(
-            name = "nameMask",
-            description = "Name mask",
-            baseType = "STRING"
-    ) String nameMask) throws Exception {
-        return convertToInfotable(repository.getRepository().listFiles(path, nameMask));
+    ) String path) throws Exception {
+        return convertToInfotable(repository.getRepository().listFiles(path));
     }
 
     @ThingworxServiceDefinition(
@@ -324,22 +332,6 @@ public class SftpRepositoryThing extends Thing {
 
         ByteArrayInputStream bis = new ByteArrayInputStream(fileRepoThing.LoadBinary(repositoryPath));
         repository.getRepository().uploadFile(bis, remotePath);
-    }
-
-
-    public static InfoTable convertToInfotable(Collection<FileSystemFile> files) throws Exception {
-        InfoTable messagesInfoTable = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemFile");
-
-        for (FileSystemFile file : files) {
-            ValueCollection vc = new ValueCollection();
-            vc.put("lastModifiedDate", new DatetimePrimitive(file.getDateTime().getMillis()));
-            vc.put("size", new NumberPrimitive(file.getSize()));
-            vc.put("path", new StringPrimitive(file.getPath()));
-            vc.put("name", new StringPrimitive(file.getName()));
-            vc.put("fileType", new StringPrimitive(file.getFileType()));
-            messagesInfoTable.addRow(vc);
-        }
-        return messagesInfoTable;
     }
 
     private InfoTable convertToInfotable(FileSystemFile file) throws Exception {

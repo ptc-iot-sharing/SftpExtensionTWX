@@ -2,7 +2,6 @@ package com.thingworx.extensions.sftpExtension.jsch;
 
 import ch.qos.logback.classic.Logger;
 import com.jcraft.jsch.*;
-import com.thingworx.common.utils.PathUtilities;
 import com.thingworx.common.utils.StringUtilities;
 import com.thingworx.extensions.sftpExtension.*;
 import com.thingworx.extensions.sftpExtension.SftpException;
@@ -11,7 +10,7 @@ import org.joda.time.DateTime;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -80,9 +79,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
     @Override
     public void renameFile(String filePath, String newName, boolean overwrite) throws SftpException {
         // build the new file path
-        File file = new File(filePath);
-        String parentPath = file.getAbsoluteFile().getParent();
-        String newFilePath = PathUtilities.concatPaths(parentPath, newName);
+        String newFilePath = Paths.get(filePath).getParent().resolve(newName).toString().replace("\\", "/");
         moveFile(filePath, newFilePath, overwrite);
     }
 
@@ -122,11 +119,10 @@ public class SftpFileRepositoryImpl implements SftpRepository {
      * Lists only the files in a given directory
      *
      * @param directoryPath directory path to list
-     * @param nameMask      Represents a name mask that the files must match. This uses bash style wildcards
      * @return A list of all the files in the directory
      */
     @Override
-    public List<FileSystemFile> listFiles(String directoryPath, String nameMask) throws SftpException {
+    public List<FileSystemFile> listFiles(String directoryPath) throws SftpException {
         return listFiles(directoryPath, false);
     }
 
@@ -168,11 +164,10 @@ public class SftpFileRepositoryImpl implements SftpRepository {
      * Lists only the directories in a given directory
      *
      * @param directoryPath directory path to list
-     * @param nameMask      Represents a name mask that the directories must match. This uses bash style wildcards
      * @return A list of all the directories in the directory
      */
     @Override
-    public List<FileSystemFile> listDirectories(String directoryPath, String nameMask) throws SftpException {
+    public List<FileSystemFile> listDirectories(String directoryPath) throws SftpException {
         return listFiles(directoryPath, true);
     }
 
@@ -184,11 +179,20 @@ public class SftpFileRepositoryImpl implements SftpRepository {
      */
     @Override
     public FileSystemFile getFileInfo(String filePath) throws SftpException {
-        List<FileSystemFile> files = listFiles(filePath, false);
-        if (files.size() > 0) {
-            return files.get(0);
-        } else {
-            throw new SftpException("The file " + filePath + " was not found");
+        try {
+            SftpATTRS attrs = channel.stat(filePath);
+            FileSystemFile file = new FileSystemFile();
+            file.setName(Paths.get(filePath).getFileName().toString());
+            file.setIsDirectory(attrs.isDir());
+            file.setSize(attrs.getSize());
+            file.setDateTime(new DateTime(attrs.getMTime()));
+            file.setPath(filePath);
+            return file;
+        } catch (com.jcraft.jsch.SftpException | NullPointerException e) {
+            LOGGER.warn(String.format("Failed to get file info for %s, exception %s",
+                    filePath, e.getMessage()), e);
+            throw new SftpException(String.format("Failed to get file info for %s, exception %s",
+                    filePath, e.getMessage()), e);
         }
     }
 
@@ -203,9 +207,9 @@ public class SftpFileRepositoryImpl implements SftpRepository {
         FileSystemFile file = getFileInfo(filePath);
         try {
             if (file.isDirectory()) {
-                channel.rmdir(file.getPath());
+                removeFolder(filePath);
             } else {
-                channel.rm(file.getPath());
+                channel.rm(filePath);
             }
         } catch (com.jcraft.jsch.SftpException e) {
             LOGGER.error(String.format("Failed to delete file %s exception: %s",
@@ -225,10 +229,13 @@ public class SftpFileRepositoryImpl implements SftpRepository {
     @Override
     public ByteArrayOutputStream downloadFile(String filePath) throws SftpException {
         // first check if the file exists
-        FileSystemFile file = getFileInfo(filePath);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            channel.get(file.getPath(), out);
+            FileSystemFile file = getFileInfo(filePath);
+            if (file.isDirectory()) {
+                throw new SftpException("Cannot download an entire folder");
+            }
+            channel.get(filePath, out);
         } catch (com.jcraft.jsch.SftpException e) {
             LOGGER.error(String.format("Failed to download file %s exception %s",
                     filePath, e.getMessage()), e);
@@ -283,5 +290,31 @@ public class SftpFileRepositoryImpl implements SftpRepository {
 
     public boolean isDisconnected() {
         return isDisconnected;
+    }
+
+    private void removeFolder(String directoryPath) throws com.jcraft.jsch.SftpException {
+        channel.cd(directoryPath);
+        // List source directory structure.
+        Vector<ChannelSftp.LsEntry> list = channel.ls(directoryPath);
+        // Iterate objects in the list to get file/folder names.
+        for (ChannelSftp.LsEntry oListItem : list) {
+            // If it is a file (not a directory).
+            if (!oListItem.getAttrs().isDir()) {
+                // Remove file.
+                channel.rm(directoryPath + "/" + oListItem.getFilename());
+
+            } else if (!(".".equals(oListItem.getFilename()) ||
+                    "..".equals(oListItem.getFilename()))) { // If it is a subdir.
+                try {
+                    // Try removing subdir.
+                    channel.rmdir(directoryPath + "/" + oListItem.getFilename());
+                } catch (Exception e) {
+                    // If subdir is not empty and error occurs.
+                    // Do lsFolderRemove on this subdir to enter it and clear its contents.
+                    removeFolder(directoryPath + "/" + oListItem.getFilename());
+                }
+            }
+        }
+        channel.rmdir(directoryPath); // Finally remove the required dir.
     }
 }
