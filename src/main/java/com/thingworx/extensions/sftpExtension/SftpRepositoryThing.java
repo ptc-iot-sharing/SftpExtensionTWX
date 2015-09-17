@@ -59,31 +59,46 @@ import java.util.List;
                                 baseType = "PASSWORD",
                                 aspects = {"friendlyName:SFTP Account Password"}
                         ), @ThingworxFieldDefinition(
-                                ordinal = 4,
-                                name = "privateKey",
-                                description = "Key based auth using a private key",
-                                baseType = "PASSWORD",
-                                aspects = {"friendlyName:Private key"}
-                        ),   @ThingworxFieldDefinition(
-                                ordinal = 3,
-                                name = "passphrase",
-                                description = "Passphrase",
-                                baseType = "PASSWORD",
-                                aspects = {"friendlyName:SFTP key passphrase"}
-                        ), @ThingworxFieldDefinition(
-                                ordinal = 5,
+                                ordinal = 6,
                                 name = "connectionTimeout",
                                 description = "Timeout (milliseconds) to establish a connection",
                                 baseType = "INTEGER",
                                 aspects = {"defaultValue:20000", "friendlyName:Connection Timeout"}
                         ), @ThingworxFieldDefinition(
-                                ordinal = 6,
+                                ordinal = 7,
                                 name = "keepAliveTimeout",
                                 description = "Timeout (milliseconds) before closing a connection",
                                 baseType = "INTEGER",
                                 aspects = {"defaultValue:60000", "friendlyName:KeepAlive Timeout"}
                         )}
                 )
+        ),
+                @ThingworxConfigurationTableDefinition(
+                        name = "Keybasedauth",
+                        description = "SFTP key based authentication",
+                        isMultiRow = false,
+                        ordinal = 1,
+                        dataShape = @ThingworxDataShapeDefinition(
+                                fields = {@ThingworxFieldDefinition(
+                                        ordinal = 0,
+                                        name = "repository",
+                                        description = "The repository where the private key is.",
+                                        baseType = "THINGNAME",
+                                        aspects = {"friendlyName:Repository"}
+                                ), @ThingworxFieldDefinition(
+                                        ordinal = 1,
+                                        name = "privateKey",
+                                        description = "File on a repository with the private key.",
+                                        baseType = "TEXT",
+                                        aspects = {"friendlyName:Private key"}
+                                ), @ThingworxFieldDefinition(
+                                        ordinal = 2,
+                                        name = "passphrase",
+                                        description = "Passphrase",
+                                        baseType = "PASSWORD",
+                                        aspects = {"friendlyName: Private key passphrase"}
+                                )}
+                        )
         )}
 )
 public class SftpRepositoryThing extends Thing {
@@ -112,9 +127,12 @@ public class SftpRepositoryThing extends Thing {
         // get values from the configuration table
         config.setHost((String) this.getConfigurationData().getValue("ConnectionInfo", "host"));
         config.setPort((Integer) this.getConfigurationData().getValue("ConnectionInfo", "port"));
-        config.setPassphrase((String) this.getConfigurationData().getValue("ConnectionInfo", "passphrase"));
+        config.setPassphrase((String) this.getConfigurationData().getValue("Keybasedauth", "passphrase"));
         config.setPassword((String) this.getConfigurationData().getValue("ConnectionInfo", "password"));
-        config.setPrivateKey((String) this.getConfigurationData().getValue("ConnectionInfo", "privateKey"));
+        String privateKeyFile = (String) this.getConfigurationData().getValue("Keybasedauth", "privateKey");
+        String fileRepo = (String) this.getConfigurationData().getValue("Keybasedauth", "repository");
+        String privateKey = ((FileRepositoryThing) ThingUtilities.findThing(fileRepo)).LoadText(privateKeyFile);
+        config.setPrivateKey(privateKey);
         config.setUsername((String) this.getConfigurationData().getValue("ConnectionInfo", "username"));
         config.setConnectionTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "connectionTimeout"));
         config.setKeepAliveTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "keepAliveTimeout"));
