@@ -11,7 +11,7 @@ import java.util.TimerTask;
 /**
  * A sftp repository that connects on demand, and disconnects on timeout
  */
-public class ManagedSftpFileRepository extends TimerTask{
+public class ManagedSftpFileRepository extends TimerTask {
     private static Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
 
     private SftpRepository repository;
@@ -32,10 +32,11 @@ public class ManagedSftpFileRepository extends TimerTask{
     @Override
     public void run() {
         long lastCommandDelta = new DateTime().getMillis() - lastCommand.getMillis();
-        if(lastCommandDelta > config.getKeepAliveTimeout()) {
+        if (lastCommandDelta > config.getKeepAliveTimeout()) {
             try {
                 repository.close();
-                LOGGER.info("Closed sftpRepository " + config.getUsername() + "@" + config.getHost());
+                LOGGER.info(String.format("Closed sftpRepository %s@%s no messages in last %d ms",
+                        config.getUsername(), config.getHost(), lastCommandDelta));
             } catch (Exception e) {
                 LOGGER.warn("Failed to close sftp repository");
             }
@@ -43,7 +44,7 @@ public class ManagedSftpFileRepository extends TimerTask{
     }
 
     public SftpRepository getRepository() throws SftpException {
-        if(repository.isDisconnected()) {
+        if (repository.isDisconnected()) {
             repository = new SftpFileRepositoryImpl(config);
         }
         lastCommand = new DateTime();
