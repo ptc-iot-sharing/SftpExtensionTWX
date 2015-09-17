@@ -7,14 +7,12 @@ import com.thingworx.entities.utils.ThingUtilities;
 import com.thingworx.logging.LogUtilities;
 import com.thingworx.metadata.annotations.*;
 import com.thingworx.things.Thing;
-import com.thingworx.things.events.ThingworxEvent;
 import com.thingworx.things.repository.FileRepositoryThing;
 import com.thingworx.types.InfoTable;
 import com.thingworx.types.collections.ValueCollection;
 import com.thingworx.types.primitives.DatetimePrimitive;
 import com.thingworx.types.primitives.NumberPrimitive;
 import com.thingworx.types.primitives.StringPrimitive;
-import com.thingworx.webservices.context.ThreadLocalContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,13 +25,6 @@ import java.util.List;
 @ThingworxImplementedShapeDefinitions(
         shapes = {@ThingworxImplementedShapeDefinition(
                 name = "FileSystemServices"
-        )}
-)
-@ThingworxEventDefinitions(
-        events = {@ThingworxEventDefinition(
-                name = "FileTransfer",
-                description = "File transfer notification",
-                dataShape = "FileTransferJob"
         )}
 )
 @ThingworxConfigurationTableDefinitions(
@@ -269,26 +260,6 @@ public class SftpRepositoryThing extends Thing {
             baseType = "STRING"
     ) String path) throws Exception {
         return repository.getRepository().createFolder(path);
-    }
-
-    private void fireTransferEvent(String userName) throws Exception {
-        ThingworxEvent event = new ThingworxEvent();
-        event.setTraceActive(ThreadLocalContext.isTraceActive());
-        event.setSecurityContext(ThreadLocalContext.getSecurityContext());
-        event.setSource(getName());
-        event.setEventName("FileTransfer");
-
-        // the name parameter isn't really used
-        InfoTable data = InfoTableInstanceFactory.createInfoTableFromDataShape("name", "FileTransferJob");
-
-        ValueCollection values = new ValueCollection();
-        values.put("userGreeted", new StringPrimitive(userName));
-
-        data.addRow(values);
-
-        event.setEventData(data);
-
-        this.dispatchBackgroundEvent(event);
     }
 
     @ThingworxServiceDefinition(
