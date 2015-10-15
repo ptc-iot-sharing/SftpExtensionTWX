@@ -12,7 +12,7 @@ project.targetCompatibility = 1.8
 // set the properties accordingly
 project.ext {
     extensionJar = "thingworx-sftp-extension.jar"
-    baseDir = '.'
+    baseDir = projectDir
     common = 'common'
     uiDir = "${baseDir}/ui"
     libDir = "${baseDir}/lib"

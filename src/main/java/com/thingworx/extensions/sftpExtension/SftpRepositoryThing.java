@@ -2,6 +2,7 @@ package com.thingworx.extensions.sftpExtension;
 
 
 import ch.qos.logback.classic.Logger;
+import com.thingworx.common.utils.StringUtilities;
 import com.thingworx.data.util.InfoTableInstanceFactory;
 import com.thingworx.entities.utils.ThingUtilities;
 import com.thingworx.logging.LogUtilities;
@@ -131,8 +132,14 @@ public class SftpRepositoryThing extends Thing {
         config.setPassword((String) this.getConfigurationData().getValue("ConnectionInfo", "password"));
         String privateKeyFile = (String) this.getConfigurationData().getValue("Keybasedauth", "privateKey");
         String fileRepo = (String) this.getConfigurationData().getValue("Keybasedauth", "repository");
-        String privateKey = ((FileRepositoryThing) ThingUtilities.findThing(fileRepo)).LoadText(privateKeyFile);
-        config.setPrivateKey(privateKey);
+        if (StringUtilities.isNonEmpty(fileRepo)) {
+            try {
+                Thing repoThing = ThingUtilities.findThing(fileRepo);
+                config.setPrivateKey(((FileRepositoryThing) repoThing).LoadText(privateKeyFile));
+            } catch (Exception ex) {
+                LOGGER.warn("Cannot load the private key file", ex);
+            }
+        }
         config.setUsername((String) this.getConfigurationData().getValue("ConnectionInfo", "username"));
         config.setConnectionTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "connectionTimeout"));
         config.setKeepAliveTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "keepAliveTimeout"));
