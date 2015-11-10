@@ -11,20 +11,19 @@ project.targetCompatibility = 1.8
 
 // set the properties accordingly
 project.ext {
-    extensionJar = "thingworx-sftp-extension.jar"
+    extensionJar = "thingworx-sftp-extension.jar" // name of the jar
     baseDir = projectDir
     common = 'common'
-    uiDir = "${baseDir}/ui"
-    libDir = "${baseDir}/lib"
-    localJarDir = "${baseDir}/lib/local"
-    srcDir = "${baseDir}/src/main"
-    buildDir = "${baseDir}/build"
-    configDir = "${baseDir}/configfiles"
-    zipDir = "${baseDir}/zip"
-    thingworxSdkDir = "${baseDir}/lib/common"
+    uiDir = "${baseDir}/ui"  // if there are any widgets
+    localJarDir = "${baseDir}/lib/local"  // if you have any jars add them here
+    srcDir = "${baseDir}/src/main"  // where are the sources located
+    buildDir = "${baseDir}/build" // where is the build saved
+    configDir = "${baseDir}/configfiles" // folder location of the metadata.xml file
+    zipDir = "${baseDir}/zip" // where to store the generated zip
+    thingworxSdkDir = "${baseDir}/lib/common"  // where the thingworx sdk is located
     packageVendor = "ThingWorx Customer Service"
-    packageName = "MailExampleExtension"
-    packageTitle = "MailExampleExtension"
+    packageName = "SftpExtension"
+    packageTitle = "SftpExtension"
     packageVersion = version
 }
 
@@ -59,7 +58,9 @@ configurations {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
+    // add all the dependencies for the extension using the packageDependencies configuration. Here only one is added
     packageDependencies 'com.jcraft:jsch:0.1.53'
+
     compile fileTree(dir: project.ext.thingworxSdkDir, include: ['*.jar'])
     packageDependencies fileTree(dir: project.ext.localJarDir, include: ['*.jar'])
 }
@@ -74,6 +75,25 @@ jar {
                     "Package-Vendor" : project.ext.packageVendor], project.ext.packageName
         )
     }
+}
+
+def addDependenciesInMetadata() {
+    def file = "${buildDir}/zip/metadata.xml"
+    def parser = new groovy.util.XmlParser(false, true);
+    def xml = parser.parse(file)
+    xml.ExtensionPackages.ExtensionPackage.JarResources[0]?.appendNode(
+            "FileResource",
+            [type: "JAR", file: project.ext.extensionJar]
+    )
+    for (File f : configurations.packageDependencies) {
+        xml.ExtensionPackages.ExtensionPackage.JarResources[0]?.appendNode(
+                "FileResource",
+                [type: "JAR", file: f.getName()]
+        )
+    }
+    PrintWriter pw = new PrintWriter(new File(file))
+    pw.write(groovy.xml.XmlUtil.serialize(xml))
+    pw.close()
 }
 
 task prepPackage(dependsOn: jar) {
@@ -91,6 +111,7 @@ task prepPackage(dependsOn: jar) {
             from "${project.ext.configDir}"
             into "${buildDir}/zip/"
         }
+        addDependenciesInMetadata()
         // add the extension jar itself
         copy {
             from "${buildDir}/libs/${project.ext.extensionJar}"

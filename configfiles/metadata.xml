@@ -6,9 +6,6 @@
                           packageVersion="1.0"
                           minimumThingWorxVersion="5.0.0">
             <JarResources>
-                <FileResource type="JAR" file="thingworx-sftp-extension.jar"
-                              description="HelloWorld ThingPackage JAR"/>
-                <FileResource type="JAR" file="jsch-0.1.53.jar" description="Pure java ssh implementation"/>
             </JarResources>
         </ExtensionPackage>
     </ExtensionPackages>
