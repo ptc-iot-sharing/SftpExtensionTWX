@@ -29,6 +29,15 @@ project.ext {
 
 repositories {
     mavenCentral()
+    jcenter()
+    maven {
+        url "${artifactory_contextUrl}/${artifactory_resolve_repokey}"
+        credentials {
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+        }
+    }
+
     flatDir {
         dirs project.ext.thingworxSdkDir
     }
@@ -54,6 +63,7 @@ configurations {
     compile {
         extendsFrom packageDependencies
     }
+    thingworxsdk
 }
 
 dependencies {
@@ -61,8 +71,21 @@ dependencies {
     // add all the dependencies for the extension using the packageDependencies configuration. Here only one is added
     packageDependencies 'com.jcraft:jsch:0.1.53'
 
+    // the zip version
+    thingworxsdk group: 'com.thingworx', name: 'Thingworx-Extension-SDK', version: '6.5.2-b463', ext: 'zip'
     compile fileTree(dir: project.ext.thingworxSdkDir, include: ['*.jar'])
     packageDependencies fileTree(dir: project.ext.localJarDir, include: ['*.jar'])
+}
+
+task extractTwxSdk(type: Copy) {
+    from {
+        configurations.thingworxsdk.collect { zipTree(it) }
+    }
+    into project.ext.thingworxSdkDir
+}
+
+gradle.projectsEvaluated {
+    compileJava.dependsOn(extractTwxSdk)
 }
 
 jar {
