@@ -36,6 +36,14 @@ public interface SftpRepository extends AutoCloseable {
     void moveFile(String sourcePath, String targetPath, boolean overwrite) throws SftpException;
 
     /**
+     * Lists the files and directories in a given directory
+     *
+     * @param directoryPath directory path to list
+     * @return A list of all the files in the directory
+     */
+    List<FileSystemFile> listFilesAndDirectories(String directoryPath) throws SftpException;
+
+    /**
      * Lists only the files in a given directory
      *
      * @param directoryPath directory path to list

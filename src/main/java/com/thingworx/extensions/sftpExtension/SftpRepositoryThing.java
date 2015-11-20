@@ -163,7 +163,7 @@ public class SftpRepositoryThing extends Thing {
             description = "Directory path",
             baseType = "STRING"
     ) String path) throws Exception {
-        return convertToInfotable(repository.getRepository().listFiles(path));
+        return convertToInfotable(repository.getRepository().listFilesAndDirectories(path));
     }
 
     @ThingworxServiceDefinition(

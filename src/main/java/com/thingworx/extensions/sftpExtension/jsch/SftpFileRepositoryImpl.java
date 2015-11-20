@@ -116,6 +116,17 @@ public class SftpFileRepositoryImpl implements SftpRepository {
     }
 
     /**
+     * Lists the files and dirs in a given directory
+     *
+     * @param directoryPath directory path to list
+     * @return A list of all the files in the directory
+     */
+    @Override
+    public List<FileSystemFile> listFilesAndDirectories(String directoryPath) throws SftpException {
+        return listFiles(directoryPath, false, false);
+    }
+
+    /**
      * Lists only the files in a given directory
      *
      * @param directoryPath directory path to list
@@ -123,22 +134,26 @@ public class SftpFileRepositoryImpl implements SftpRepository {
      */
     @Override
     public List<FileSystemFile> listFiles(String directoryPath) throws SftpException {
-        return listFiles(directoryPath, false);
+        return listFiles(directoryPath, true, false);
+
     }
 
-    private List<FileSystemFile> listFiles(String directoryPath, Boolean onlyDirectories) throws SftpException {
+    private List<FileSystemFile> listFiles(String directoryPath, boolean filterDirectories, boolean filterFiles)
+            throws SftpException {
         try {
             Vector<ChannelSftp.LsEntry> vv = channel.ls(directoryPath);
 
             if (vv != null) {
                 List<FileSystemFile> files = new ArrayList<>(vv.size());
                 for (int ii = 0; ii < vv.size(); ii++) {
-
                     ChannelSftp.LsEntry currentElement = vv.elementAt(ii);
-                    if (!onlyDirectories || currentElement.getAttrs().isDir()) {
+                    boolean isDirectory = currentElement.getAttrs().isDir();
+                    // if it's a file and we don't have filter flag for files set, then add it
+                    // if it's a folder and we don't have the filter flag for folders set, then add it
+                    if ((!isDirectory && !filterFiles) || (!filterDirectories && isDirectory)) {
                         FileSystemFile file = new FileSystemFile();
                         file.setName(currentElement.getFilename());
-                        file.setIsDirectory(currentElement.getAttrs().isDir());
+                        file.setIsDirectory(isDirectory);
                         file.setSize(currentElement.getAttrs().getSize());
                         file.setDateTime(new DateTime(currentElement.getAttrs().getMTime()));
                         if (!directoryPath.equals("/")) {
@@ -168,7 +183,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
      */
     @Override
     public List<FileSystemFile> listDirectories(String directoryPath) throws SftpException {
-        return listFiles(directoryPath, true);
+        return listFiles(directoryPath, false, true);
     }
 
     /**
