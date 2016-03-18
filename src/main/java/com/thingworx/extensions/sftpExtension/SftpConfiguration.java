@@ -73,11 +73,8 @@ public class SftpConfiguration {
     public String toString() {
         return "SftpConfiguration{" +
                 "username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", host='" + host + '\'' +
                 ", port=" + port +
-                ", passphrase='" + passphrase + '\'' +
-                ", privateKey='" + privateKey + '\'' +
                 ", connectionTimeout=" + connectionTimeout +
                 '}';
     }

@@ -144,7 +144,6 @@ public class SftpRepositoryThing extends Thing {
         config.setConnectionTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "connectionTimeout"));
         config.setKeepAliveTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "keepAliveTimeout"));
         repository = new ManagedSftpFileRepository(config);
-        LOGGER.info("Created a sftp thing with config:" + config);
     }
 
     @ThingworxServiceDefinition(
