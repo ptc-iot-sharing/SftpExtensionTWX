@@ -110,7 +110,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
             channel.rename(sourcePath, targetPath);
         } catch (com.jcraft.jsch.SftpException e) {
             LOGGER.error(String.format("Failed to move file %s to %s", sourcePath, targetPath), e);
-            throw new SftpException(String.format("Failed to move file %s to %s, exception %s",
+            throw new SftpException(String.format("Failed to move file %s to %s, exception: %s",
                     sourcePath, targetPath, e.getMessage()), e);
         }
     }
@@ -155,7 +155,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
                         file.setName(currentElement.getFilename());
                         file.setIsDirectory(isDirectory);
                         file.setSize(currentElement.getAttrs().getSize());
-                        file.setDateTime(new DateTime(currentElement.getAttrs().getMTime()));
+                        file.setDateTime(new DateTime(currentElement.getAttrs().getMTime() * 1000L));
                         if (!directoryPath.equals("/")) {
                             file.setPath(directoryPath + "/" + currentElement.getFilename());
                         } else {
@@ -170,7 +170,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
                 return new ArrayList<>();
             }
         } catch (com.jcraft.jsch.SftpException | NullPointerException e) {
-            throw new SftpException(String.format("Failed to list files in %s, exception %s",
+            throw new SftpException(String.format("Failed to list files in %s, exception: %s",
                     directoryPath, e.getMessage()), e);
         }
     }
@@ -204,14 +204,14 @@ public class SftpFileRepositoryImpl implements SftpRepository {
             file.setPath(filePath);
             return file;
         } catch (com.jcraft.jsch.SftpException | NullPointerException e) {
-            LOGGER.warn(String.format("Failed to get file info for %s, exception %s",
+            LOGGER.warn(String.format("Failed to get file info for %s, exception: %s",
                     filePath, e.getMessage()), e);
-            throw new SftpException(String.format("Failed to get file info for %s, exception %s",
+            throw new SftpException(String.format("Failed to get file info for %s, exception: %s",
                     filePath, e.getMessage()), e);
         }
     }
 
-    /**
+    /**`
      * Deletes a specific file from the remote filesystem
      *
      * @param filePath full file path
@@ -252,9 +252,9 @@ public class SftpFileRepositoryImpl implements SftpRepository {
             }
             channel.get(filePath, out);
         } catch (com.jcraft.jsch.SftpException e) {
-            LOGGER.error(String.format("Failed to download file %s exception %s",
+            LOGGER.error(String.format("Failed to download file %s exception: %s",
                     filePath, e.getMessage()), e);
-            throw new SftpException(String.format("Failed to download file %s exception %s",
+            throw new SftpException(String.format("Failed to download file %s exception: %s",
                     filePath, e.getMessage()), e);
         }
         return out;
@@ -271,8 +271,8 @@ public class SftpFileRepositoryImpl implements SftpRepository {
         try {
             channel.put(inputStream, filePath);
         } catch (com.jcraft.jsch.SftpException e) {
-            LOGGER.error(String.format("Failed to upload file %s exception %s", filePath, e.getMessage()), e);
-            throw new SftpException(String.format("Failed to upload file %s exception %s", filePath, e.getMessage()), e);
+            LOGGER.error(String.format("Failed to upload file %s exception: %s", filePath, e.getMessage()), e);
+            throw new SftpException(String.format("Failed to upload file %s exception: %s", filePath, e.getMessage()), e);
         }
     }
 
@@ -281,8 +281,8 @@ public class SftpFileRepositoryImpl implements SftpRepository {
         try {
             channel.cd(directory);
         } catch (com.jcraft.jsch.SftpException e) {
-            LOGGER.error(String.format("Failed to change directory to %s exception %s", directory, e.getMessage()), e);
-            throw new SftpException(String.format("Failed to change directory to %s exception %s",
+            LOGGER.error(String.format("Failed to change directory to %s exception: %s", directory, e.getMessage()), e);
+            throw new SftpException(String.format("Failed to change directory to %s exception: %s",
                     directory, e.getMessage()), e);
         }
     }
