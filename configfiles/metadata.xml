@@ -3,7 +3,7 @@
         <ExtensionPackage name="SftpExtension"
                           description="SFTP and SCP extension"
                           vendor="ThingWorx Labs"
-                          packageVersion="1.0.2"
+                          packageVersion="1.0.3"
                           minimumThingWorxVersion="5.0.0">
             <JarResources>
             </JarResources>

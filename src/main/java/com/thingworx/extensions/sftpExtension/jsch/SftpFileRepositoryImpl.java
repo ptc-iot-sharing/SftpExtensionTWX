@@ -7,6 +7,7 @@ import com.thingworx.extensions.sftpExtension.*;
 import com.thingworx.extensions.sftpExtension.SftpException;
 import com.thingworx.logging.LogUtilities;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -155,7 +156,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
                         file.setName(currentElement.getFilename());
                         file.setIsDirectory(isDirectory);
                         file.setSize(currentElement.getAttrs().getSize());
-                        file.setDateTime(new DateTime(currentElement.getAttrs().getMTime() * 1000L));
+                        file.setDateTime(new DateTime(currentElement.getAttrs().getMTime() * 1000L, DateTimeZone.UTC));
                         if (!directoryPath.equals("/")) {
                             file.setPath(directoryPath + "/" + currentElement.getFilename());
                         } else {
@@ -200,7 +201,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
             file.setName(Paths.get(filePath).getFileName().toString());
             file.setIsDirectory(attrs.isDir());
             file.setSize(attrs.getSize());
-            file.setDateTime(new DateTime(attrs.getMTime()));
+            file.setDateTime(new DateTime(attrs.getMTime() * 1000L, DateTimeZone.UTC));
             file.setPath(filePath);
             return file;
         } catch (com.jcraft.jsch.SftpException | NullPointerException e) {
