@@ -4,9 +4,6 @@
 
  The SFTP Extension allows you to configure Thingworx entities to connect to a remote SFTP (SSH File Transfer Protocol) server for the purposes of managing the file system,  like copying, moving or deleting files, as well as file transfer functionalities, like uploading or downloading files. The extension uses SSH for its underlying transport, so it provides secure authentication and transport. Both password, and key based authentication are supported.
 
-### INFO ###
-* Version 1.0
-* Tested with ThingWorx 6.5
 
 ### How do I get set up? ###
 
