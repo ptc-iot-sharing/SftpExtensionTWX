@@ -2,11 +2,11 @@ package com.thingworx.extensions.sftpExtension;
 
 
 import ch.qos.logback.classic.Logger;
-import com.thingworx.common.utils.StringUtilities;
 import com.thingworx.data.util.InfoTableInstanceFactory;
 import com.thingworx.entities.utils.ThingUtilities;
 import com.thingworx.logging.LogUtilities;
 import com.thingworx.metadata.annotations.*;
+import com.thingworx.system.ContextType;
 import com.thingworx.things.Thing;
 import com.thingworx.things.repository.FileRepositoryThing;
 import com.thingworx.types.InfoTable;
@@ -103,10 +103,11 @@ import java.util.List;
         )}
 )
 public class SftpRepositoryThing extends Thing {
-    private static Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
-
+    private static final Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
+    private static final String CONNECTION_SETTINGS_TABLE = "ConnectionInfo";
+    private static final String KEY_BASED_SETTINGS_TABLE = "Keybasedauth";
     private ManagedSftpFileRepository repository;
-    private SftpConfiguration config = new SftpConfiguration();
+    private final SftpConfiguration config = new SftpConfiguration();
 
     public static InfoTable convertToInfotable(Collection<FileSystemFile> files) throws Exception {
         InfoTable messagesInfoTable = InfoTableInstanceFactory.createInfoTableFromDataShape("FileSystemFile");
@@ -124,15 +125,16 @@ public class SftpRepositoryThing extends Thing {
     }
 
     @Override
-    protected void initializeThing() throws Exception {
+    protected void initializeThing(ContextType contextType) throws Exception {
+        super.initializeThing(contextType);
         // get values from the configuration table
-        config.setHost((String) this.getConfigurationData().getValue("ConnectionInfo", "host"));
-        config.setPort((Integer) this.getConfigurationData().getValue("ConnectionInfo", "port"));
-        config.setPassphrase((String) this.getConfigurationData().getValue("Keybasedauth", "passphrase"));
-        config.setPassword((String) this.getConfigurationData().getValue("ConnectionInfo", "password"));
-        String privateKeyFile = (String) this.getConfigurationData().getValue("Keybasedauth", "privateKey");
-        String fileRepo = (String) this.getConfigurationData().getValue("Keybasedauth", "repository");
-        if (StringUtilities.isNonEmpty(fileRepo)) {
+        config.setHost(this.getStringConfigurationSetting(CONNECTION_SETTINGS_TABLE, "host"));
+        config.setPort((Integer) this.getConfigurationSetting(CONNECTION_SETTINGS_TABLE, "port"));
+        config.setPassphrase(this.getStringConfigurationSetting(KEY_BASED_SETTINGS_TABLE, "passphrase"));
+        config.setPassword(this.getStringConfigurationSetting(CONNECTION_SETTINGS_TABLE, "password"));
+        String privateKeyFile = this.getStringConfigurationSetting(KEY_BASED_SETTINGS_TABLE, "privateKey");
+        String fileRepo = this.getStringConfigurationSetting(KEY_BASED_SETTINGS_TABLE, "repository");
+        if (fileRepo!=null && !fileRepo.isEmpty()) {
             try {
                 Thing repoThing = ThingUtilities.findThing(fileRepo);
                 config.setPrivateKey(((FileRepositoryThing) repoThing).LoadText(privateKeyFile));
@@ -140,9 +142,9 @@ public class SftpRepositoryThing extends Thing {
                 LOGGER.warn("Cannot load the private key file", ex);
             }
         }
-        config.setUsername((String) this.getConfigurationData().getValue("ConnectionInfo", "username"));
-        config.setConnectionTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "connectionTimeout"));
-        config.setKeepAliveTimeout((Integer) this.getConfigurationData().getValue("ConnectionInfo", "keepAliveTimeout"));
+        config.setUsername(this.getStringConfigurationSetting(CONNECTION_SETTINGS_TABLE, "username"));
+        config.setConnectionTimeout((Integer) this.getConfigurationSetting(CONNECTION_SETTINGS_TABLE, "connectionTimeout"));
+        config.setKeepAliveTimeout((Integer) this.getConfigurationSetting(CONNECTION_SETTINGS_TABLE, "keepAliveTimeout"));
         repository = new ManagedSftpFileRepository(config);
     }
 

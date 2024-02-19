@@ -1,24 +1,29 @@
-<Entities>
-    <ExtensionPackages>
-        <ExtensionPackage name="SftpExtension"
-                          description="SFTP and SCP extension"
-                          vendor="ThingWorx Labs"
-                          packageVersion="1.0.3"
-                          minimumThingWorxVersion="5.0.0">
-            <JarResources>
-            </JarResources>
-        </ExtensionPackage>
-    </ExtensionPackages>
-    <ThingPackages>
-        <ThingPackage name="SftpRepositoryThing" description="Sftp thing package"
-                      className="com.thingworx.extensions.sftpExtension.SftpRepositoryThing" aspect.isSystemObject="false"
-                      aspect.isCreatable="true"/>
-    </ThingPackages>
-    <ThingTemplates>
-        <ThingTemplate name="SftpRepositoryTemplate" description="Sftp server Template."
-                       thingPackage="SftpRepositoryThing"
-                       aspect.isSystemObject="false">
-            <avatar/>
-        </ThingTemplate>
-    </ThingTemplates>
+<?xml version="1.0" encoding="UTF-8"?><Entities>
+    
+  <ExtensionPackages>
+        
+    <ExtensionPackage name="SftpExtension" description="SFTP and SCP extension" vendor="IQNOX" packageVersion="1.1.0" minimumThingWorxVersion="5.0.0">
+            
+      <JarResources/>
+          
+    </ExtensionPackage>
+      
+  </ExtensionPackages>
+    
+  <ThingPackages>
+        
+    <ThingPackage name="SftpRepositoryThing" description="Sftp thing package" className="com.thingworx.extensions.sftpExtension.SftpRepositoryThing" aspect.isSystemObject="false" aspect.isCreatable="true"/>
+      
+  </ThingPackages>
+    
+  <ThingTemplates>
+        
+    <ThingTemplate name="SftpRepositoryTemplate" description="Sftp server Template." thingPackage="SftpRepositoryThing" aspect.isSystemObject="false">
+            
+      <avatar/>
+          
+    </ThingTemplate>
+      
+  </ThingTemplates>
+  
 </Entities>

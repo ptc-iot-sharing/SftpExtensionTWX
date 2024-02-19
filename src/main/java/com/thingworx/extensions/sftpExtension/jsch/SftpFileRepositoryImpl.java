@@ -2,7 +2,6 @@ package com.thingworx.extensions.sftpExtension.jsch;
 
 import ch.qos.logback.classic.Logger;
 import com.jcraft.jsch.*;
-import com.thingworx.common.utils.StringUtilities;
 import com.thingworx.extensions.sftpExtension.*;
 import com.thingworx.extensions.sftpExtension.SftpException;
 import com.thingworx.logging.LogUtilities;
@@ -20,7 +19,7 @@ import java.util.Vector;
  * A implementation of the SftpRepository based on the Jsch library
  */
 public class SftpFileRepositoryImpl implements SftpRepository {
-    private static Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
+    private static final Logger LOGGER = LogUtilities.getInstance().getApplicationLogger(SftpRepositoryThing.class);
 
     private final Session session;
     private final ChannelSftp channel;
@@ -30,7 +29,7 @@ public class SftpFileRepositoryImpl implements SftpRepository {
         try {
             JSch jSch = new JSch();
             // attempt to load the private key
-            if (StringUtilities.isNonEmpty(config.getPrivateKey())) {
+            if (config.getPrivateKey() != null && !"".equals(config.getPassphrase())) {
                 // get the passphrase as a byte array
                 byte[] passphraseBytes = config.getPassphrase() != null ? config.getPassphrase().getBytes() : null;
                 // the private key as a byte array
